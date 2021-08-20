@@ -90,7 +90,7 @@ def vectorize_stories(data):
             np.array(answers))
 
 try:
-    path = get_file('babi-tasks-v1-2.tar.gz',
+    path = get_file('babi_tasks_v1-2.tar.gz',
         origin='https://s3.amazonaws.com/text-datasets/babi_tasks_1-20_v1-2.tar.gz')
 except:
     print("""
@@ -102,20 +102,33 @@ $ mv tasks_1-20_v1-2.tar.gz ~/.keras/datasets/
     raise
 tar = tarfile.open(path)
 
-challenges = {
-    # QA1 with 10,000 samples
-    'single_supporting_fact_10k':
-        'tasks_1-20_v1-2/en-10k/qa1_single-supporting-fact_{}.txt',
-    # QA2 with 10,000 samples
-    'two_supporting_facts_10k':
-        'tasks_1-20_v1-2/en-10k/qa2_two-supporting-facts_{}.txt',
-}
-challenge_type = 'single_supporting_fact_10k'
-challenge = challenges[challenge_type]
+train_stories = get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa1_single-supporting-fact_train.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa2_two-supporting-facts_train.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa3_three-supporting-facts_train.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa4_two-arg-relations_train.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa6_yes-no-questions_train.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa5_three-arg-relations_train.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa7_counting_train.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa8_lists-sets_train.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa9_simple-negation_train.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa10_indefinite-knowledge_train.txt'))+ get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa11_basic-coreference_train.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa12_conjunction_train.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa13_compound-coreference_train.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa14_time-reasoning_train.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa15_basic-deduction_train.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa16_basic-induction_train.txt'))+ get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa17_positional-reasoning_train.txt'))+ get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa18_size-reasoning_train.txt'))+ get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa19_path-finding_train.txt'))+ get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa20_agents-motivations_train.txt'))
+test_stories = get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa1_single-supporting-fact_test.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa2_two-supporting-facts_test.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa3_three-supporting-facts_test.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa4_two-arg-relations_test.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa6_yes-no-questions_test.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa5_three-arg-relations_test.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa7_counting_test.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa8_lists-sets_test.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa9_simple-negation_test.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa10_indefinite-knowledge_test.txt'))+ get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa11_basic-coreference_test.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa12_conjunction_test.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa13_compound-coreference_test.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa14_time-reasoning_test.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa15_basic-deduction_test.txt')) + get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa16_basic-induction_test.txt'))+ get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa17_positional-reasoning_test.txt'))+ get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa18_size-reasoning_test.txt'))+ get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa19_path-finding_test.txt'))+ get_stories(tar.extractfile('tasks_1-20_v1-2/en-10k/qa20_agents-motivations_test.txt'))
 
-print('Extracting stories for the challenge:', challenge_type)
-train_stories = get_stories(tar.extractfile(challenge.format('train')))
-test_stories = get_stories(tar.extractfile(challenge.format('test')))
+vocab = set()
+for story, q, answer in train_stories + test_stories:
+    vocab |= set(story + q + [answer])
+vocab = sorted(vocab)
+
+# Reserve 0 for masking via pad_sequences
+vocab_size = len(vocab) + 1
+story_maxlen = max(map(len, (x for x, _, _ in train_stories + test_stories)))
+query_maxlen = max(map(len, (x for _, x, _ in train_stories + test_stories)))
+
+print('-')
+print('Vocab size:', vocab_size, 'unique words')
+print('Story max length:', story_maxlen, 'words')
+print('Query max length:', query_maxlen, 'words')
+print('Number of training stories:', len(train_stories))
+print('Number of test stories:', len(test_stories))
+print('-')
+print('Here\'s what a "story" tuple looks like (input, query, answer):')
+print(train_stories[0])
+print('-')
+
+
+for s in list(enumerate(vocab)):
+    print(s)
 
 for i in range(5):
     print("Story: {}".format(' '.join(train_stories[i][0])))
@@ -127,13 +140,6 @@ vocab = set()
 for story, q, answer in train_stories + test_stories:
     vocab |= set(story + q + [answer])
 vocab = sorted(vocab)
-
-print('Vectorizing the word sequences...')
-word_idx = dict((c, i + 1) for i, c in enumerate(vocab))
-
-vocab_size = len(vocab) + 1
-story_maxlen = max(map(len, (x for x, _, _ in train_stories + test_stories)))
-query_maxlen = max(map(len, (x for _, x, _ in train_stories + test_stories)))
 
 print('Vectorizing the word sequences...')
 word_idx = dict((c, i + 1) for i, c in enumerate(vocab))
@@ -209,9 +215,9 @@ pickle.dump( vocab, open( os.path.join(save_path,"vocab.pkl"), "wb" ) )
 elapsed_time = time.time() - start_time
 print("Elapsed time: {}".format(hms_string(elapsed_time)))
 
-save_path = "./data/"
-model = load_model(os.path.join(save_path,"chatbot.h5"))
-vocab = pickle.load( open( os.path.join(save_path,"vocab.pkl"), "rb" ) )
+save_path = "/home/dani/Desktop/jarvalous/data"
+model = load_model(os.path.join(save_path,"chatbot_818.h5"))
+vocab = pickle.load( open( os.path.join(save_path,"vocab_818.pkl"), "rb" ) )
 
 pred = model.predict([inputs_test, queries_test])
 print(pred)
@@ -223,15 +229,20 @@ print("Final accuracy: {}".format(score))
 
 print("Remember, I only know these words: {}".format(vocab))
 print()
-story = "Daniel went to the bedroom. Daniel went to the kitchen."\
-    "Daniel went back to the bedroom."
-query = "Where is Daniel ?"
+story = "Daniel got the chocolate. Afterwards he gave the chocolate to Fred."\
+     "Fred went to the bedroom."
 
-adhoc_stories = (tokenize(story), tokenize(query), '?')
+story = input("Tell me a story: ")
 
-adhoc_train, adhoc_query, adhoc_answer = vectorize_stories([adhoc_stories])
+while True:
+    query = input ("ask smth: ") #"Who did Daniel give the chocolate to?"
+    # query = "Where is Fred?"
 
-pred = model.predict([adhoc_train, adhoc_query])
-print(pred[0])
-pred = np.argmax(pred,axis=1)
-print("Answer: {}({})".format(vocab[pred[0]-1],pred))
+    adhoc_stories = (tokenize(story), tokenize(query), '?')
+
+    adhoc_train, adhoc_query, adhoc_answer = vectorize_stories([adhoc_stories])
+
+    pred = model.predict([adhoc_train, adhoc_query])
+    print(pred[0])
+    pred = np.argmax(pred,axis=1)
+    print("Answer: {}({})".format(vocab[pred[0]-1],pred))
