@@ -4,11 +4,13 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
+import pyttsx3
+
 
 scopes = ['https://www.googleapis.com/auth/spreadsheets.readonly']
 
 quotesSheet = '1oOaSeWJbYQHUe8rPuvq3JMFZNjTrDId-13rWAWoxRh4'
-qsRange = 'A1:A72'
+qsRange = 'A75'
 
 def main():
     creds = None
@@ -42,6 +44,9 @@ def main():
     else:
         for row in values:
             print(row[0])
+            engine = pyttsx3.init()
+            engine.say(row[0])
+            engine.runAndWait()
 
 if __name__ == '__main__':
     main()
