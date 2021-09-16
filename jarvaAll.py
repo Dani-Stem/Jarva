@@ -1,7 +1,5 @@
 from __future__ import print_function, division
 import random
-from playsound import playsound
-from google.cloud import texttospeech
 import quotes
 import face_recognition
 import cv2
@@ -15,16 +13,14 @@ import sys
 from google.cloud import speech
 import pyaudio
 from six.moves import queue
-import webbrowser
-
+import sqlite3 as sl
 
 
 ranQuote = random.choice(quotes.quotesList)
 
-# ser = serial.Serial('/dev/ttyACM0')
+
 video_capture = cv2.VideoCapture(0)
 
-# print(cv2.getBuildInformation())
 
 dani0 = face_recognition.load_image_file("dani0.jpg")
 dani0_face_encoding = face_recognition.face_encodings(dani0)[0]
@@ -148,7 +144,43 @@ while True:
                     print('Audio content written to file "output.mp3"')
                     playsound('/home/dani/Desktop/jar/output.mp3')
 
+                # Instantiates a client
+                client = texttospeech.TextToSpeechClient()
 
+                # Set the text input to be synthesized
+
+                con = sl.connect('todo.db')
+
+                data = con.execute("select task from todo where completed = 'n';")
+
+                with con:
+                    for row in data:
+                        rawTasks = row
+                        tasks = ''.join(rawTasks)
+                synthesis_input = texttospeech.SynthesisInput(text=tasks)
+
+                # Build the voice request, select the language code ("en-US") and the ssml
+                # voice gender ("neutral")
+                voice = texttospeech.VoiceSelectionParams(
+                    language_code="en-US", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
+                )
+
+                # Select the type of audio file you want returned
+                audio_config = texttospeech.AudioConfig(
+                    audio_encoding=texttospeech.AudioEncoding.MP3
+                )
+
+                # Perform the text-to-speech request on the text input with the selected
+                # voice parameters and audio file type
+                response = client.synthesize_speech(
+                    input=synthesis_input, voice=voice, audio_config=audio_config
+                )
+                # The response's audio_content is binary.
+                with open("output.mp3", "wb") as out:
+                    # Write the response to the output file.
+                    out.write(response.audio_content)
+                    print('Audio content written to file "output.mp3"')
+                    playsound('/home/dani/Desktop/jar/output.mp3')
 
                 url = 'google.com'
 
@@ -273,17 +305,98 @@ while True:
                             print(print_state)
 
                             if re.search(r"\b(please search)\b", transcript, re.I):
-                                print("searching..")
+                                client = texttospeech.TextToSpeechClient()
+
+                                # Set the text input to be synthesized
+                                synthesis_input = texttospeech.SynthesisInput(text="searching for "+transcript[14:])
+
+                                # Build the voice request, select the language code ("en-US") and the ssml
+                                # voice gender ("neutral")
+                                voice = texttospeech.VoiceSelectionParams(
+                                    language_code="en-US", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
+                                )
+
+                                # Select the type of audio file you want returned
+                                audio_config = texttospeech.AudioConfig(
+                                    audio_encoding=texttospeech.AudioEncoding.MP3
+                                )
+
+                                # Perform the text-to-speech request on the text input with the selected
+                                # voice parameters and audio file type
+                                response = client.synthesize_speech(
+                                    input=synthesis_input, voice=voice, audio_config=audio_config
+                                )
+                                # The response's audio_content is binary.
+                                with open("output.mp3", "wb") as out:
+                                    # Write the response to the output file.
+                                    out.write(response.audio_content)
+                                    print('Audio content written to file "output.mp3"')
+                                    playsound('/home/dani/Desktop/jar/output.mp3')
+
                                 search_string = transcript[14:]
                                 search_string = search_string.replace(' ', '+', )
                                 browser = webdriver.Chrome('chromedriver')
                                 for i in range(1):
-                                    matched_elements = browser.get("https://www.google.com/search?q=" +
-                                                                   search_string + "&start=" + str(i))
+                                    matched_elements = browser.get("https://www.google.com/search?q=" + search_string + "&start=" + str(i))
 
                             if re.search(r"\b(exit|quit)\b", transcript, re.I):
-                                print("goodbye")
+                                client = texttospeech.TextToSpeechClient()
+
+                                # Set the text input to be synthesized
+                                synthesis_input = texttospeech.SynthesisInput(text="Goodbye")
+
+                                # Build the voice request, select the language code ("en-US") and the ssml
+                                # voice gender ("neutral")
+                                voice = texttospeech.VoiceSelectionParams(
+                                    language_code="en-US", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
+                                )
+
+                                # Select the type of audio file you want returned
+                                audio_config = texttospeech.AudioConfig(
+                                    audio_encoding=texttospeech.AudioEncoding.MP3
+                                )
+
+                                # Perform the text-to-speech request on the text input with the selected
+                                # voice parameters and audio file type
+                                response = client.synthesize_speech(
+                                    input=synthesis_input, voice=voice, audio_config=audio_config
+                                )
+                                # The response's audio_content is binary.
+                                with open("output.mp3", "wb") as out:
+                                    # Write the response to the output file.
+                                    out.write(response.audio_content)
+                                    print('Audio content written to file "output.mp3"')
+                                    playsound('/home/dani/Desktop/jar/output.mp3')
                                 break
+
+                            if re.search(r"mark task zero as complete|mark task 0 as complete", transcript, re.I):
+                                client = texttospeech.TextToSpeechClient()
+
+                                # Set the text input to be synthesized
+                                synthesis_input = texttospeech.SynthesisInput(text="Task zero is now complete")
+
+                                # Build the voice request, select the language code ("en-US") and the ssml
+                                # voice gender ("neutral")
+                                voice = texttospeech.VoiceSelectionParams(
+                                    language_code="en-US", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
+                                )
+
+                                # Select the type of audio file you want returned
+                                audio_config = texttospeech.AudioConfig(
+                                    audio_encoding=texttospeech.AudioEncoding.MP3
+                                )
+
+                                # Perform the text-to-speech request on the text input with the selected
+                                # voice parameters and audio file type
+                                response = client.synthesize_speech(
+                                    input=synthesis_input, voice=voice, audio_config=audio_config
+                                )
+                                # The response's audio_content is binary.
+                                with open("output.mp3", "wb") as out:
+                                    # Write the response to the output file.
+                                    out.write(response.audio_content)
+                                    print('Audio content written to file "output.mp3"')
+                                    playsound('/home/dani/Desktop/jar/output.mp3')
 
                             num_chars_printed = 0
 
@@ -351,4 +464,8 @@ while True:
     # Hit 'q' on the keyboard to quit!
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
+
+
+
+
 
