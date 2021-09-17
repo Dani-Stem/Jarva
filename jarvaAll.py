@@ -157,6 +157,7 @@ while True:
                     for row in data:
                         rawTasks = row
                         tasks = ''.join(rawTasks)
+                        print(tasks)
                 synthesis_input = texttospeech.SynthesisInput(text=tasks)
 
                 # Build the voice request, select the language code ("en-US") and the ssml
@@ -369,12 +370,19 @@ while True:
                                     playsound('/home/dani/Desktop/jar/output.mp3')
                                 break
 
-                            if re.search(r"mark task zero as complete|mark task 0 as complete", transcript, re.I):
+                            if re.search(r"mark task complete", transcript, re.I):
                                 client = texttospeech.TextToSpeechClient()
-
                                 # Set the text input to be synthesized
-                                synthesis_input = texttospeech.SynthesisInput(text="Task zero is now complete")
-
+                                synthesis_input = texttospeech.SynthesisInput(text="task "+transcript[19:]+" is now complete")
+                                taskVoice0 = transcript[19:]
+                                taskVoice1 = taskVoice0.lower()
+                                taskVoice = taskVoice1.replace(" ", "")
+                                print(taskVoice)
+                                con = sl.connect('todo.db')
+                                with con:
+                                    data = con.execute(f"update todo set completed='f' where task='{taskVoice}';")
+                                for row in data:
+                                    print(row)
                                 # Build the voice request, select the language code ("en-US") and the ssml
                                 # voice gender ("neutral")
                                 voice = texttospeech.VoiceSelectionParams(
@@ -464,8 +472,4 @@ while True:
     # Hit 'q' on the keyboard to quit!
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
-
-
-
-
 
