@@ -246,7 +246,7 @@ while True:
                                     print('Audio content written to file "output.mp3"')
                                 playsound('/home/dani/Desktop/jar/output.mp3')
 
-                                #searching what was said
+                                #voice search command
                                 search_string = transcript[14:]
                                 search_string = search_string.replace(' ', '+', )
                                 browser = webdriver.Chrome('chromedriver')
@@ -254,9 +254,9 @@ while True:
                                     matched_elements = browser.get("https://www.google.com/search?q=" + search_string + "&start=" + str(i))
 
                             #exit program voice command
-                            if re.search(r"\b(exit|quit)\b", transcript, re.I):
+                            if re.search(r"\b(we are done here)\b", transcript, re.I):
                                 client = texttospeech.TextToSpeechClient()
-                                synthesis_input = texttospeech.SynthesisInput(text="Goodbye")
+                                synthesis_input = texttospeech.SynthesisInput(text="ok. Goodbye, love ya")
                                 voice = texttospeech.VoiceSelectionParams(
                                     language_code="en-US", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
                                 )
@@ -283,7 +283,7 @@ while True:
                                     data = con.execute(f"update todo set completed='y' where task='{taskVoice}';")
                                 for row in data:
                                     print(row)
-                                    
+
                                 client = texttospeech.TextToSpeechClient()
                                 synthesis_input = texttospeech.SynthesisInput(text="task "+transcript[19:]+" is now complete")
                                 voice = texttospeech.VoiceSelectionParams(
@@ -301,6 +301,25 @@ while True:
                                 playsound('/home/dani/Desktop/jar/output.mp3')
 
                             num_chars_printed = 0
+
+                            #play chess voice command
+                            if re.search(r"\b(do you want to play a game)\b", transcript, re.I):
+                                client = texttospeech.TextToSpeechClient()
+                                synthesis_input = texttospeech.SynthesisInput(text="yea. let me load up chess")
+                                voice = texttospeech.VoiceSelectionParams(
+                                    language_code="en-US", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
+                                )
+                                audio_config = texttospeech.AudioConfig(
+                                    audio_encoding=texttospeech.AudioEncoding.MP3
+                                )
+                                response = client.synthesize_speech(
+                                    input=synthesis_input, voice=voice, audio_config=audio_config
+                                )
+                                with open("output.mp3", "wb") as out:
+                                    out.write(response.audio_content)
+                                    print('Audio content written to file "output.mp3"')
+                                playsound('/home/dani/Desktop/jar/output.mp3')
+
 
 
                 def main():
@@ -328,18 +347,12 @@ while True:
 
                         listen_print_loop(responses)
 
-
                 if __name__ == "__main__":
                     main()
 
-
-
-
             face_names.append(name)
 
-
     process_this_frame = not process_this_frame
-
 
     for (top, right, bottom, left), name in zip(face_locations, face_names):
         top *= 4
