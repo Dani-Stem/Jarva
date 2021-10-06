@@ -1,7 +1,6 @@
 from __future__ import print_function, division
 import random
-from lifeAppGui import *
-import lifeAppGui
+from lifeAppGui import App
 import mainChess
 import quotes
 import face_recognition
@@ -10,25 +9,16 @@ import numpy as np
 from time import gmtime, strftime
 from selenium import webdriver
 import re
-import sys
 from google.cloud import speech
 import pyaudio
 from six.moves import queue
-import sqlite3 as sl
-import speech_recognition as sr
-import os
-from mainChess import playChess
-from pydub import AudioSegment
-from pydub.silence import split_on_silence
 import sys
 import sqlite3 as sl
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QHBoxLayout, QGroupBox, QDialog, QVBoxLayout, QInputDialog, QLineEdit
 from playsound import playsound
 from google.cloud import texttospeech
 
 #connecting to db for life app
 con = sl.connect('lifeApp.db')
-
 
 #grabbing quotes from quotes list
 ranQuote = random.choice(quotes.quotesList)
@@ -88,13 +78,12 @@ while True:
             best_match_index = np.argmin(face_distances)
 
             now = strftime("%H:%M:%S", gmtime())
-            print(now)
 
             #if it matching me then start features
             if matches[best_match_index]:
                 name = known_face_names[best_match_index]
                 video_capture.release()
-                cv2.destroyAllWindows()
+                # cv2.destroyAllWindows()
 
                 #say hello
                 client = texttospeech.TextToSpeechClient()
@@ -110,8 +99,9 @@ while True:
                 )
                 with open("output.mp3", "wb") as out:
                     out.write(response.audio_content)
-                    print('Audio content written to file "output.mp3"')
+                    print('Hello, Dani')
                 playsound('/home/dani/Desktop/jar/output.mp3')
+
 
 
                 #tell me a quote from my list of quotes
@@ -128,10 +118,27 @@ while True:
                 )
                 with open("output.mp3", "wb") as out:
                     out.write(response.audio_content)
-                    print('Audio content written to file "output.mp3"')
+                    print(ranQuote)
                 playsound('/home/dani/Desktop/jar/output.mp3')
 
-                #tell me my list of things i have to do
+
+                # #tell me my list of things i have to do
+                client = texttospeech.TextToSpeechClient()
+                synthesis_input = texttospeech.SynthesisInput(text='your current incomplete tasks are')
+                voice = texttospeech.VoiceSelectionParams(
+                    language_code="en-US", ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
+                )
+                audio_config = texttospeech.AudioConfig(
+                    audio_encoding=texttospeech.AudioEncoding.MP3
+                )
+                response = client.synthesize_speech(
+                    input=synthesis_input, voice=voice, audio_config=audio_config
+                )
+                with open("output.mp3", "wb") as out:
+                    out.write(response.audio_content)
+                    print('your current incomplete tasks are')
+                playsound('/home/dani/Desktop/jar/output.mp3')
+
                 con = sl.connect('todo.db')
                 data = con.execute("select task from todo where completed = 'n';")
                 with con:
@@ -152,350 +159,15 @@ while True:
                 )
                 with open("output.mp3", "wb") as out:
                     out.write(response.audio_content)
-                    print('Audio content written to file "output.mp3"')
+                    # print('Audio content written to file "output.mp3"')
                 playsound('/home/dani/Desktop/jar/output.mp3')
 
+                # con.execute(f"update todo set completed='y' where task='${tasks}'")
+
+
                 #life app w/ gui
+                App()
 
-                # con = sl.connect('lifeApp.db')
-                # grabbing counts of rows by column
-                with con:
-                    currDate0 = con.execute("select date('now', 'localtime')")
-                    for value in currDate0:
-                        currDate = value[0]
-
-                with con:
-                    currTime0 = con.execute("select time('now', 'localtime')")
-                    for value in currTime0:
-                        currTime = value[0]
-
-                with con:
-                    con.execute(
-                        f"insert into life_app_main(date, time, all_goal, workout_yoga, rwd, hardware, software, veggies) values('{currDate}', '{currTime}', 'n', 'n', 'n', 'n', 'n', 'n');")
-
-                    currId0 = con.execute("select last_insert_rowid()")
-                    for value in currId0:
-                        currId = value[0]
-                        # print(currId)
-
-                with con:
-                    countAllGoals0 = con.execute(
-                        f"select count(*) from life_app_main where date='{currDate}' and all_goal='y';")
-                    for value in countAllGoals0:
-                        countAllGoals = value[0]
-
-                with con:
-                    countWorkoutYoga0 = con.execute(
-                        f"select count(*) from life_app_main where date='{currDate}' and workout_yoga='y';")
-                    for value in countWorkoutYoga0:
-                        countWorkoutYoga = value[0]
-
-                with con:
-                    countRwd0 = con.execute(f"select count(*) from life_app_main where date='{currDate}' and rwd='y';")
-                    for value in countRwd0:
-                        countRwd = value[0]
-
-                with con:
-                    countHardware0 = con.execute(
-                        f"select count(*) from life_app_main where date='{currDate}' and hardware='y';")
-                    for value in countHardware0:
-                        countHardware = value[0]
-
-                with con:
-                    countSoftware0 = con.execute(
-                        f"select count(*) from life_app_main where date='{currDate}' and software='y';")
-                    for value in countSoftware0:
-                        countSoftware = value[0]
-
-                with con:
-                    countVeggies0 = con.execute(
-                        f"select count(*) from life_app_main where date='{currDate}' and veggies='y';")
-                    for value in countVeggies0:
-                        countVeggies = value[0]
-
-                    if countVeggies != 0 and countSoftware != 0 and countRwd != 0 and countHardware != 0 and countWorkoutYoga != 0:
-                        con.execute(f"update life_app_main set all_goal='y' where id={currId};")
-
-                # grabbing vaules of current columns
-                with con:
-                    workoutYoga0 = con.execute(f"select workout_yoga from life_app_main where id={currId}")
-                    for value in workoutYoga0:
-                        workoutYoga = value[0]
-
-                with con:
-                    rwd0 = con.execute(f"select rwd from life_app_main where id={currId}")
-                    for value in rwd0:
-                        rwd = value[0]
-
-                with con:
-                    hardware0 = con.execute(f"select hardware from life_app_main where id={currId}")
-                    for value in hardware0:
-                        hardware = value[0]
-
-                with con:
-                    software0 = con.execute(f"select software from life_app_main where id={currId}")
-                    for value in software0:
-                        software = value[0]
-
-                with con:
-                    veggies0 = con.execute(f"select veggies from life_app_main where id={currId}")
-                    for value in veggies0:
-                        veggies = value[0]
-
-                with con:
-                    allGoals0 = con.execute(f"select all_goal from life_app_main where id={currId}")
-                    for value in allGoals0:
-                        allGoals = value[0]
-
-
-                class App(QWidget):
-
-                    def __init__(self):
-                        super().__init__()
-                        self.title = 'Life App'
-                        self.left = 2000
-                        self.top = 10
-                        self.width = 640
-                        self.height = 480
-                        self.initUI()
-
-                    def initUI(self):
-                        self.setWindowTitle(self.title)
-                        self.setGeometry(self.left, self.top, self.width, self.height)
-
-                        self.feel()
-                        self.recAct()
-
-                        with con:
-                            if countWorkoutYoga == 0:
-                                self.workoutYoga()
-                            else:
-                                con.execute(f"update life_app_main set workout_yoga='y' where id={currId}")
-                        with con:
-                            if countRwd == 0:
-                                self.rwd()
-                            else:
-                                con.execute(f"update life_app_main set rwd='y' where id={currId}")
-                        with con:
-                            if countHardware == 0:
-                                self.hardware()
-                            else:
-                                con.execute(f"update life_app_main set hardware='y' where id={currId}")
-
-                        with con:
-                            if countSoftware == 0:
-                                self.software()
-                            else:
-                                con.execute(f"update life_app_main set software='y' where id={currId}")
-
-                        with con:
-                            if countVeggies == 0:
-                                self.veggies()
-                            else:
-                                con.execute(f"update life_app_main set veggies='y' where id={currId}")
-
-                        self.nexAct()
-                        self.show()
-                        self.close()
-                        with con:
-                            data = con.execute("select * from life_app_main;")
-                            for row in data:
-                                print(row)
-                        exit()
-
-                    def feel(self):
-
-                        client = texttospeech.TextToSpeechClient()
-                        synthesis_input = texttospeech.SynthesisInput(text="how do you feel")
-                        voice = texttospeech.VoiceSelectionParams(
-                            language_code="en-US", ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
-                        )
-                        audio_config = texttospeech.AudioConfig(
-                            audio_encoding=texttospeech.AudioEncoding.MP3
-                        )
-                        response = client.synthesize_speech(
-                            input=synthesis_input, voice=voice, audio_config=audio_config
-                        )
-                        with open("output.mp3", "wb") as out:
-                            out.write(response.audio_content)
-                        playsound('/home/dani/Desktop/jar/output.mp3')
-
-                        text, okPressed = QInputDialog.getText(self, "Get text", "How do you feel: ", QLineEdit.Normal,
-                                                               "")
-                        with con:
-                            if okPressed and text != '':
-                                mood = text
-                                con.execute(f"update life_app_main set mood='{mood}' where id={currId}")
-
-                    def recAct(self):
-
-                        client = texttospeech.TextToSpeechClient()
-                        synthesis_input = texttospeech.SynthesisInput(text="recent activity")
-                        voice = texttospeech.VoiceSelectionParams(
-                            language_code="en-US", ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
-                        )
-                        audio_config = texttospeech.AudioConfig(
-                            audio_encoding=texttospeech.AudioEncoding.MP3
-                        )
-                        response = client.synthesize_speech(
-                            input=synthesis_input, voice=voice, audio_config=audio_config
-                        )
-                        with open("output.mp3", "wb") as out:
-                            out.write(response.audio_content)
-                        playsound('/home/dani/Desktop/jar/output.mp3')
-
-                        text, okPressed = QInputDialog.getText(self, "Get text", "Most recent activity: ",
-                                                               QLineEdit.Normal, "")
-                        with con:
-                            if okPressed and text != '':
-                                recAct = text
-                                con.execute(f"update life_app_main set recent_activity='{recAct}' where id={currId}")
-
-                    def workoutYoga(self):
-
-                        client = texttospeech.TextToSpeechClient()
-                        synthesis_input = texttospeech.SynthesisInput(text="workout or yoga")
-                        voice = texttospeech.VoiceSelectionParams(
-                            language_code="en-US", ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
-                        )
-                        audio_config = texttospeech.AudioConfig(
-                            audio_encoding=texttospeech.AudioEncoding.MP3
-                        )
-                        response = client.synthesize_speech(
-                            input=synthesis_input, voice=voice, audio_config=audio_config
-                        )
-                        with open("output.mp3", "wb") as out:
-                            out.write(response.audio_content)
-                        playsound('/home/dani/Desktop/jar/output.mp3')
-
-                        text, okPressed = QInputDialog.getText(self, "Get text", "Workout/Yoga: ", QLineEdit.Normal, "")
-                        with con:
-                            if okPressed and text != '':
-                                workoutYoga = text
-                                con.execute(f"update life_app_main set workout_yoga='{workoutYoga}' where id={currId}")
-
-                    def rwd(self):
-
-                        client = texttospeech.TextToSpeechClient()
-                        synthesis_input = texttospeech.SynthesisInput(text="Read Write draw")
-                        voice = texttospeech.VoiceSelectionParams(
-                            language_code="en-US", ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
-                        )
-                        audio_config = texttospeech.AudioConfig(
-                            audio_encoding=texttospeech.AudioEncoding.MP3
-                        )
-                        response = client.synthesize_speech(
-                            input=synthesis_input, voice=voice, audio_config=audio_config
-                        )
-                        with open("output.mp3", "wb") as out:
-                            out.write(response.audio_content)
-                        playsound('/home/dani/Desktop/jar/output.mp3')
-
-                        text, okPressed = QInputDialog.getText(self, "Get text", "Read/Write/Draw: ", QLineEdit.Normal,
-                                                               "")
-                        with con:
-                            if okPressed and text != '':
-                                rwd = text
-                                con.execute(f"update life_app_main set rwd='{rwd}' where id={currId}")
-
-                    def hardware(self):
-
-                        client = texttospeech.TextToSpeechClient()
-                        synthesis_input = texttospeech.SynthesisInput(text="hardware")
-                        voice = texttospeech.VoiceSelectionParams(
-                            language_code="en-US", ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
-                        )
-                        audio_config = texttospeech.AudioConfig(
-                            audio_encoding=texttospeech.AudioEncoding.MP3
-                        )
-                        response = client.synthesize_speech(
-                            input=synthesis_input, voice=voice, audio_config=audio_config
-                        )
-                        with open("output.mp3", "wb") as out:
-                            out.write(response.audio_content)
-                        playsound('/home/dani/Desktop/jar/output.mp3')
-
-                        text, okPressed = QInputDialog.getText(self, "Get text", "Harwdware: ", QLineEdit.Normal, "")
-                        with con:
-                            if okPressed and text != '':
-                                hardware = text
-                                con.execute(f"update life_app_main set hardware='{hardware}' where id={currId}")
-
-                    def software(self):
-
-                        client = texttospeech.TextToSpeechClient()
-                        synthesis_input = texttospeech.SynthesisInput(text="software")
-                        voice = texttospeech.VoiceSelectionParams(
-                            language_code="en-US", ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
-                        )
-                        audio_config = texttospeech.AudioConfig(
-                            audio_encoding=texttospeech.AudioEncoding.MP3
-                        )
-                        response = client.synthesize_speech(
-                            input=synthesis_input, voice=voice, audio_config=audio_config
-                        )
-                        with open("output.mp3", "wb") as out:
-                            out.write(response.audio_content)
-                        playsound('/home/dani/Desktop/jar/output.mp3')
-
-                        text, okPressed = QInputDialog.getText(self, "Get text", "Software: ", QLineEdit.Normal, "")
-                        with con:
-                            if okPressed and text != '':
-                                software = text
-                                con.execute(f"update life_app_main set software='{software}' where id={currId}")
-
-                    def veggies(self):
-
-                        client = texttospeech.TextToSpeechClient()
-                        synthesis_input = texttospeech.SynthesisInput(text="veggie")
-                        voice = texttospeech.VoiceSelectionParams(
-                            language_code="en-US", ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
-                        )
-                        audio_config = texttospeech.AudioConfig(
-                            audio_encoding=texttospeech.AudioEncoding.MP3
-                        )
-                        response = client.synthesize_speech(
-                            input=synthesis_input, voice=voice, audio_config=audio_config
-                        )
-                        with open("output.mp3", "wb") as out:
-                            out.write(response.audio_content)
-                        playsound('/home/dani/Desktop/jar/output.mp3')
-
-                        text, okPressed = QInputDialog.getText(self, "Get text", "veggies: ", QLineEdit.Normal, "")
-                        with con:
-                            if okPressed and text != '':
-                                veggies = text
-                                con.execute(f"update life_app_main set veggies='{veggies}' where id={currId}")
-
-                    def nexAct(self):
-
-                        client = texttospeech.TextToSpeechClient()
-                        synthesis_input = texttospeech.SynthesisInput(text="Next activity")
-                        voice = texttospeech.VoiceSelectionParams(
-                            language_code="en-US", ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
-                        )
-                        audio_config = texttospeech.AudioConfig(
-                            audio_encoding=texttospeech.AudioEncoding.MP3
-                        )
-                        response = client.synthesize_speech(
-                            input=synthesis_input, voice=voice, audio_config=audio_config
-                        )
-                        with open("output.mp3", "wb") as out:
-                            out.write(response.audio_content)
-                        playsound('/home/dani/Desktop/jar/output.mp3')
-
-                        text, okPressed = QInputDialog.getText(self, "Get text", "Next activity: ", QLineEdit.Normal,
-                                                               "")
-                        with con:
-                            if okPressed and text != '':
-                                nexAct = text
-                                con.execute(f"update life_app_main set next_activity='{nexAct}' where id={currId}")
-
-
-                if __name__ == '__main__':
-                    app = QApplication(sys.argv)
-                    ex = App()
-                    sys.exit(app.exec_())
                 #starting voice search
                 url = 'google.com'
                 RATE = 16000
@@ -575,7 +247,7 @@ while True:
 
                         else:
                             print_state = transcript + overwrite_chars
-                            print(print_state)
+                            # print(print_state)
 
                             #voice search command
                             if re.search(r"\b(please search)\b", transcript, re.I):
@@ -592,8 +264,9 @@ while True:
                                 )
                                 with open("output.mp3", "wb") as out:
                                     out.write(response.audio_content)
-                                    print('Audio content written to file "output.mp3"')
+                                    # print("searching for "+transcript[14:])
                                 playsound('/home/dani/Desktop/jar/output.mp3')
+
 
                                 #voice search command
                                 search_string = transcript[14:]
@@ -619,6 +292,7 @@ while True:
                                     out.write(response.audio_content)
                                     print('Audio content written to file "output.mp3"')
                                 playsound('/home/dani/Desktop/jar/output.mp3')
+
                                 break
 
                             #task completed voice command
@@ -646,8 +320,9 @@ while True:
                                 )
                                 with open("output.mp3", "wb") as out:
                                     out.write(response.audio_content)
-                                    print('Audio content written to file "output.mp3"')
+                                    print("task "+transcript[19:]+" is now complete")
                                 playsound('/home/dani/Desktop/jar/output.mp3')
+
 
                             num_chars_printed = 0
 
@@ -666,8 +341,9 @@ while True:
                                 )
                                 with open("output.mp3", "wb") as out:
                                     out.write(response.audio_content)
-                                    print('Audio content written to file "output.mp3"')
+                                    # print('yea. let me load up chess')
                                 playsound('/home/dani/Desktop/jar/output.mp3')
+
 
                                 mainChess.playChess()
 
@@ -715,7 +391,7 @@ while True:
         font = cv2.FONT_HERSHEY_DUPLEX
         cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
 
-    cv2.imshow('video', frame)
+    # cv2.imshow('video', frame)
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    if 0xFF == ord('q'):
         break
